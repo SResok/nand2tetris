@@ -1,0 +1,57 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/04/Fill.asm
+
+// Runs an infinite loop that listens to the keyboard input.
+// When a key is pressed (any key), the program blackens the screen,
+// i.e. writes "black" in every pixel;
+// the screen should remain fully black as long as the key is pressed. 
+// When no key is pressed, the program clears the screen, i.e. writes
+// "white" in every pixel;
+// the screen should remain fully clear as long as no key is pressed.
+
+// Put your code here.
+
+i=0
+addr = SCREEN
+fill = 0
+filled = 0
+
+LOOP:
+    if kbd = 1 goto PRESSED 
+    set fill 0
+    if filled = 1 goto SETUP 
+    
+    else jump LOOP
+
+PRESSED:
+    if filled = 1 goto LOOP
+    set fill -1
+    goto SETUP 
+
+SETUP:
+    set filled to 0
+    set addr to SCREEN
+    set remainderCol 256
+
+PAINTCOL:
+    set remainderRow 32
+    if remainderCol = 0 goto DONE
+    GOTO PAINTROW
+
+PAINTROW:
+    if remainderRow = 0 goto ROWDONE
+    fill addr
+    addr + 1
+    remainderRow - 1
+    GOTO PAINTROW
+
+ROWDONE:
+    remainderCol - 1
+    GOTO PAINTCOL
+
+DONE:
+    if kbd = 0 goto LOOP
+    set filled 1
+    GOTO LOOP
