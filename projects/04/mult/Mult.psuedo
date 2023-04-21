@@ -11,57 +11,19 @@
 
 // Put your code here.
 
-@sum
-M=0
+    if R0 | R1 = 0 goto STOP
 
-@R1
-D=M
+    @remainder = R0
 
-@STOP // stop if R1 = <= 0
-D;JLE
+    @sum = 0
+ 
+LOOP:
+    if remainder = 0 goto STOP
 
-@R0
-D=M
+    sum + r1
 
-@STOP // stop if R0 = <= 0
-D;JLE
+    remainder--
+    goto LOOP
 
-@remainder // remainder = R0
-M=D
-
-(LOOP)
-
-    @remainder
-    D=M
-
-    @STOP // stop if remainder 0
-    D;JEQ
-
-    // SUM + R1
-    @R1
-    D=M
-
-    @sum
-    M=M+D
-
-    // remainder --
-    @remainder
-    M=M-1
-
-    @LOOP
-    0;JMP
-
-
-(STOP) // set sum to R2
-    @sum
-    D=M
-
-    @R2
-    M=D
-
-(END)
-    @END
-    0;JMP
-    
-
-    
+STOP:
+    R2 = sum
