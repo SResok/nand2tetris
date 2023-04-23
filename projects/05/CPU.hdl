@@ -25,8 +25,8 @@
  * than to the address resulting from executing the current instruction. 
  */
 
-CHIP CPU {
-
+CHIP CPU { 
+    
     IN  inM[16],         // M value input  (M = contents of RAM[A])
         instruction[16], // Instruction for execution
         reset;           // Signals whether to re-start the current
@@ -40,4 +40,41 @@ CHIP CPU {
 
     PARTS:
     // Put your code here:
+    
+    // 000  | 0 - 000000  | 000 | 000
+    // Opco | ALUcont     | Des | Jmp
+
+    // ocp = instruction[15]
+    // alu = instruction[6..12]
+    // des = instruction[3..5]
+    // jmp = instruction[0..2]
+
+    Not(in=instruction[15], out=Ainstruction);
+    
+    Mux16(a=ALUout, b=instruction, sel=Ainstruction, out=Aaddress);
+    
+    Or(a=Ainstruction, b=instruction[5], out=loadA);
+
+    ARegister(in=Aaddress, load=loadA, out=regA, out[0..14]=addressM[0..14]); // register A !!!!!!!!!
+    DRegister(in=ALUout, load=instruction[4], out=ALUx); // register D
+
+    Mux16(a=regA, b=inM, sel=instruction[12], out=ALUy); // first comp bit
+
+    And(a=instruction[15], b=instruction[3], out=writeM); // writeM
+
+    ALU(x=ALUx, y=ALUy, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], f=instruction[7], no=instruction[6], out=ALUout, out=outM, zr=zero, ng=negative);
+
+    And(a=negative, b=instruction[2], out=lt0); // out < 0
+    And(a=zero, b=instruction[1], out=eq0); // out == 0 
+    
+    Nor(a=zero, b=negative, out=positive);
+    And(a=positive, b=instruction[0], out=gt0); // out > 0 
+
+    Or(a=lt0, b=eq0, out=or0);
+    Or(a=or0, b=gt0, out=or1);
+    And(a=or1, b=instruction[15], out=jump);
+
+    Not(in=jump, out=increment);
+
+    PC(in=regA, load=jump, inc=increment, reset=reset, out[0..14]=pc[0..14]);
 }
