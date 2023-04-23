@@ -54,9 +54,11 @@ CHIP CPU {
     Mux16(a=ALUout, b=instruction, sel=Ainstruction, out=Aaddress);
     
     Or(a=Ainstruction, b=instruction[5], out=loadA);
-
+    
     ARegister(in=Aaddress, load=loadA, out=regA, out[0..14]=addressM[0..14]); // register A !!!!!!!!!
-    DRegister(in=ALUout, load=instruction[4], out=ALUx); // register D
+    
+    And(a=instruction[15], b=instruction[4], out=loadD);
+    DRegister(in=ALUout, load=loadD, out=ALUx); // register D
 
     Mux16(a=regA, b=inM, sel=instruction[12], out=ALUy); // first comp bit
 
