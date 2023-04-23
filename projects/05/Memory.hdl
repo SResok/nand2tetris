@@ -36,6 +36,5 @@ CHIP Memory {
 
     Keyboard(out=outkbd);
 
-
     Mux4Way16(a=outram, b=outram, c=outscreen, d=outkbd, sel=address[13..14], out=out);
 }
