@@ -1,0 +1,20 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/01/Nor.hdl
+
+ /**
+ * Nor gate:
+ * out = 1 if (a == 0 and b == 0)
+ *       0 otherwise
+ */
+
+CHIP Nor {
+    IN a, b;
+    OUT out;
+
+    PARTS:
+    // Put your code here:
+    Or(a=a, b=b, out=outor);
+    Not (in=outor,out=out); 
+}
