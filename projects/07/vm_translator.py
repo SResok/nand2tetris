@@ -369,7 +369,7 @@ class VMTranslator:
                     self.translation += dedent(self.handle_segment(line))
 
         with open(self.out_file, 'w') as o:
-            o.write(self.translation)
+            o.write("\n".join([s for s in self.translation.split("\n") if s]))
 
 if not len(sys.argv) > 1: 
     sys.exit('no file provided, aborting...')
