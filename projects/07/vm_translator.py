@@ -3,22 +3,7 @@ import sys
 import os
 from textwrap import dedent
 
-class VMTranslator:
-    def __init__(self, input_file):
-        self.input_file = input_file
-        self.dir_path = os.path.dirname(input_file)
-        self.file_name = os.path.splitext(os.path.basename(input_file))[0]
-        self.out_file = os.path.join(self.dir_path, self.file_name + ".asm")
-        
-        self.reserved_variables = {
-            "local": "LCL",
-            "argument": "ARG",
-            "this": "THIS",
-            "that": "THAT"
-        }
-        self.translation = ""
-        self.label_no = 0
-
+class Parser(object):
     def remove_comments(self, string):
         pattern = r"(\".*?\"|\'.*?\')|(/\*.*?\*/|//[^\r\n]*$)"
         regex = re.compile(pattern, re.MULTILINE | re.DOTALL)
@@ -31,174 +16,63 @@ class VMTranslator:
 
         return regex.sub(_replacer, string)
 
-    def handle_constant(self, value):
-        return """
-            @{0}
-            D=A
-        """.format(value) + self.handle_push()
+    def get_commands(self, input_file):
+        parsed_commands = []
 
-    def handle_pointer(self, line):
-        variable = "THIS" if line["value"] == 0 else "THAT"
+        with open(input_file, 'r') as f:
+            for command in f:
+                command = self.remove_comments(command)
+                if len(command) <= 1:
+                    continue
 
-        if line["action"] == "push":
+                command = command.strip() and command.split()
 
-            return """
-                @{0}
-                D=M
-                
-                @SP 
-                A=M 
-                M=D
+                parsed_commands.append(command)
 
-                @SP
-                M=M+1
-            """.format( variable )
+        return parsed_commands
 
-        elif line["action"] == "pop":
-            
-            return """
-                @SP
-                M=M-1
-                A=M
-                D=M
+class CodeWriter():
+    def __init__(self, commands, file_name):
+        self.file_name = file_name
+        self.commands = commands
 
-                @{0}
-                M=D
-            """.format( variable )
-    
-    def handle_segment(self, line):
-        line = {
-            "action": line[0],
-            "segment": line[1],
-            "value": int(line[2])
+        self.command = []
+
+        self.code = ""
+
+        self.reserved_variables = {
+            "local": "LCL",
+            "argument": "ARG",
+            "this": "THIS",
+            "that": "THAT"
         }
 
-        if line["segment"] in self.reserved_variables:
-            return self.handle_reserved_variables(line)
-        
-        elif line["segment"] == "constant": # constant only pushes 
-            return self.handle_constant(line["value"])
- 
-        elif line["segment"] == "static":
-            return self.handle_static(line)
+        self.label_no = 0
 
-        elif line["segment"] == "temp":
-            return self.handle_temp(line)
+    def write(self):
+        for i in range(len(self.commands)):
+            self.handle_command(self.commands[i])
 
-        elif line["segment"] == "pointer":
-            return self.handle_pointer(line)
+        return self.code
 
-    def get_label(self):
-        self.label_no += 1
-        return self.label_no
+    
+    def handle_command(self,command):
+        self.code += "// " + " ".join(command)
 
-    def handle_reserved_variables(self,line):
-        variable = self.reserved_variables[line["segment"]]
+        if len(command) == 1:  # math operation
+            self.code += dedent(self.handle_operation(command[0]))
+        else:
+            segment = command[1]
+            if segment not in self.reserved_variables and segment not in ["constant","temp","pointer","static"]:
+                sys.exit("Unknown segment: {0}".format(segment))
 
-        if line["action"] == "push":
-            push = """
-            @{0} 
-            D=A 
-            @{1} 
-            D=D+M 
-            A=D 
-            D=M
-            """.format(line["value"], variable)
+            self.command = {
+                "action": command[0],
+                "segment": command[1],
+                "value": int(command[2])
+            }
 
-            return push + self.handle_push()
-
-        elif line["action"] == "pop":
-            pop = """
-                @{0}
-                D=A
-                @{1}
-                D=D+M 
-
-                @pop_temp_var
-                M=D
-                
-                @SP
-                M=M-1
-                A=M
-                D=M
-
-                @pop_temp_var
-                A=M
-                M=D
-
-            """.format( line["value"], variable )
-
-            return pop
-
-
-
-
-    def handle_temp(self, line):
-        # temp 8 place segment
-        # from 5 to 12
-
-        temp_address = 5 + line["value"]
-
-        if temp_address not in range(5, 12):
-            sys.exit("temp error")
-
-        if line["action"] == "push":
-            push = """
-            @{0}
-            D=M
-            """.format(temp_address) 
-
-            return push + self.handle_push()
-
-        elif line["action"] == "pop":
-            return """                
-                @SP
-                M=M-1
-                A=M
-                D=M
-
-                @{0}
-                M=D
-            """.format(temp_address)
-
-    def handle_static(self, line):
-        static_var = self.file_name + "." + str(line["value"])
-
-        if line["action"] == "push":
-
-            return """
-            @{0}
-            D=M
-            
-            @SP 
-            A=M 
-            M=D
-
-            @SP
-            M=M+1
-            """.format(static_var)
-
-        elif line["action"] == "pop":
-            
-            return """
-            @SP
-            M=M-1
-            A=M
-            D=M
-
-            @{0}
-            M=D
-        """.format(static_var)
-
-    def handle_push(self):
-        return """
-            @SP 
-            A=M 
-            M=D
-
-            @SP
-            M=M+1
-        """
+            self.code += dedent(self.handle_segment(command[1]))
 
     def handle_operation(self, op):
         if op not in ["add", "sub", "eq","lt","gt","neg","and","not","or"]:
@@ -347,29 +221,188 @@ class VMTranslator:
                 A=M-1
                 M=D
             """
+    def handle_segment(self, segment):
+        if segment in self.reserved_variables:
+            return self.handle_reserved_variables()
         
+        elif segment == "constant":
+            return self.handle_constant()
+ 
+        elif segment == "static":
+            return self.handle_static()
+
+        elif segment == "temp":
+            return self.handle_temp()
+
+        elif segment == "pointer":
+            return self.handle_pointer()
+
+    def handle_reserved_variables(self):
+        variable = self.reserved_variables[self.command["segment"]]
+
+        if self.command["action"] == "push":
+            push = """
+            @{0} 
+            D=A 
+            @{1} 
+            D=D+M 
+            A=D 
+            D=M
+            """.format(self.command["value"], variable)
+
+            return push + self.handle_push()
+
+        elif self.command["action"] == "pop":
+            pop = """
+                @{0}
+                D=A
+                @{1}
+                D=D+M 
+
+                @pop_temp_var
+                M=D
+                
+                @SP
+                M=M-1
+                A=M
+                D=M
+
+                @pop_temp_var
+                A=M
+                M=D
+
+            """.format( self.command["value"], variable )
+
+            return pop
+    def handle_constant(self):
+        return """
+            @{0}
+            D=A
+        """.format(self.command["value"]) + self.handle_push()
+    def handle_static(self):
+        static_var = self.file_name + "." + str(line["value"])
+
+        if self.command["action"] == "push":
+
+            return """
+            @{0}
+            D=M
+            
+            @SP 
+            A=M 
+            M=D
+
+            @SP
+            M=M+1
+            """.format(static_var)
+
+        elif self.command["action"] == "pop":
+            
+            return """
+            @SP
+            M=M-1
+            A=M
+            D=M
+
+            @{0}
+            M=D
+        """.format(static_var)
+    def handle_temp(self):
+        # temp 8 place segment
+        # from 5 to 12
+
+        temp_address = 5 + self.command["value"]
+
+        if temp_address not in range(5, 12):
+            sys.exit("temp error")
+
+        if self.command["action"] == "push":
+            push = """
+            @{0}
+            D=M
+            """.format(temp_address) 
+
+            return push + self.handle_push()
+
+        elif self.command["action"] == "pop":
+            return """                
+                @SP
+                M=M-1
+                A=M
+                D=M
+
+                @{0}
+                M=D
+            """.format(temp_address)
+    def handle_pointer(self):
+        variable = "THIS" if self.command["value"] == 0 else "THAT"
+
+        if self.command["action"] == "push":
+
+            return """
+                @{0}
+                D=M
+                
+                @SP 
+                A=M 
+                M=D
+
+                @SP
+                M=M+1
+            """.format( variable )
+
+        elif self.command["action"] == "pop":
+            
+            return """
+                @SP
+                M=M-1
+                A=M
+                D=M
+
+                @{0}
+                M=D
+            """.format( variable ) 
+
+    def get_label(self):
+        self.label_no += 1
+        return self.label_no
+    def handle_push(self):
+        return """
+            @SP 
+            A=M 
+            M=D
+
+            @SP
+            M=M+1
+        """
+
+class Main(object):
+    def __init__(self, input_file):
+        self.input_file = input_file
+        self.file_name = os.path.splitext(os.path.basename(self.input_file))[0]
+        
+        self.translate()
+
     def translate(self):
-        with open(self.input_file, 'r') as f:
-            for line in f:
-                line = self.remove_comments(line)
-                if len(line) <= 1:
-                    continue
+        
+        parser = Parser()
+        parsed_commands = parser.get_commands(self.input_file)
+        
+        code_writer = CodeWriter(parsed_commands,self.file_name)
+        translation = code_writer.write()
 
-                self.translation += "// " + line
+        # remove blank lines 
+        translation = "\n".join([s for s in translation.split("\n") if s]) 
 
-                line = line.strip() and line.split()
+        dir_path = os.path.dirname(self.input_file)
+        out_file = os.path.join(dir_path, self.file_name + ".asm")
+        
+        with open(out_file, 'w') as o:
+            o.write(translation)
 
-                if len(line) == 1:  # math operation
-                    self.translation += dedent(self.handle_operation(line[0]))
-                else:
-                    segment = line[1]
-                    if segment not in self.reserved_variables and segment not in ["constant","temp","pointer","static"]:
-                        sys.exit("Unknown segment: {0}".format(segment))
 
-                    self.translation += dedent(self.handle_segment(line))
 
-        with open(self.out_file, 'w') as o:
-            o.write("\n".join([s for s in self.translation.split("\n") if s]))
+
 
 if not len(sys.argv) > 1: 
     sys.exit('no file provided, aborting...')
@@ -378,4 +411,4 @@ if not os.path.isfile(sys.argv[1]):
 
 input_file = sys.argv[1]
 
-VMTranslator(input_file).translate()
+Main(input_file)
