@@ -109,20 +109,20 @@ class VMTranslator:
 
         elif line["action"] == "pop":
             pop = """
-                @{0} // get which location
+                @{0}
                 D=A
-                @{1} // variable
-                D=D+M // where to pop it
+                @{1}
+                D=D+M 
 
-                @pop_temp_var // store chosen pop location in tmp variable
+                @pop_temp_var
                 M=D
                 
-                @SP // variable 
+                @SP
                 M=M-1
                 A=M
                 D=M
 
-                @pop_temp_var // pop it
+                @pop_temp_var
                 A=M
                 M=D
 
@@ -181,7 +181,7 @@ class VMTranslator:
         elif line["action"] == "pop":
             
             return """
-            @SP // variable 
+            @SP
             M=M-1
             A=M
             D=M
