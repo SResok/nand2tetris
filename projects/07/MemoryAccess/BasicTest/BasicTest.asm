@@ -1,312 +1,326 @@
+// push constant 10
 
-            @10
-            D=A
-        
-            @SP 
-            A=M 
-            M=D
+@10
+D=A
 
-            @SP
-            M=M+1
-        
-                @0 // get which location
-                D=A
-                @LCL // variable
-                D=D+M // where to pop it
+@SP 
+A=M 
+M=D
 
-                @pop_temp_var // store chosen pop location in tmp variable
-                M=D
-                
-                @SP // variable 
-                M=M-1
-                A=M
-                D=M
+@SP
+M=M+1
+// pop local 0
 
-                @pop_temp_var // pop it
-                A=M
-                M=D
+@0 // get which location
+D=A
+@LCL // variable
+D=D+M // where to pop it
 
-            
-            @21
-            D=A
-        
-            @SP 
-            A=M 
-            M=D
+@pop_temp_var // store chosen pop location in tmp variable
+M=D
 
-            @SP
-            M=M+1
-        
-            @22
-            D=A
-        
-            @SP 
-            A=M 
-            M=D
+@SP // variable 
+M=M-1
+A=M
+D=M
 
-            @SP
-            M=M+1
-        
-                @2 // get which location
-                D=A
-                @ARG // variable
-                D=D+M // where to pop it
+@pop_temp_var // pop it
+A=M
+M=D
 
-                @pop_temp_var // store chosen pop location in tmp variable
-                M=D
-                
-                @SP // variable 
-                M=M-1
-                A=M
-                D=M
+// push constant 21
 
-                @pop_temp_var // pop it
-                A=M
-                M=D
+@21
+D=A
 
-            
-                @1 // get which location
-                D=A
-                @ARG // variable
-                D=D+M // where to pop it
+@SP 
+A=M 
+M=D
 
-                @pop_temp_var // store chosen pop location in tmp variable
-                M=D
-                
-                @SP // variable 
-                M=M-1
-                A=M
-                D=M
+@SP
+M=M+1
+// push constant 22
 
-                @pop_temp_var // pop it
-                A=M
-                M=D
+@22
+D=A
 
-            
-            @36
-            D=A
-        
-            @SP 
-            A=M 
-            M=D
+@SP 
+A=M 
+M=D
 
-            @SP
-            M=M+1
-        
-                @6 // get which location
-                D=A
-                @THIS // variable
-                D=D+M // where to pop it
+@SP
+M=M+1
+// pop argument 2
 
-                @pop_temp_var // store chosen pop location in tmp variable
-                M=D
-                
-                @SP // variable 
-                M=M-1
-                A=M
-                D=M
+@2 // get which location
+D=A
+@ARG // variable
+D=D+M // where to pop it
 
-                @pop_temp_var // pop it
-                A=M
-                M=D
+@pop_temp_var // store chosen pop location in tmp variable
+M=D
 
-            
-            @42
-            D=A
-        
-            @SP 
-            A=M 
-            M=D
+@SP // variable 
+M=M-1
+A=M
+D=M
 
-            @SP
-            M=M+1
-        
-            @45
-            D=A
-        
-            @SP 
-            A=M 
-            M=D
+@pop_temp_var // pop it
+A=M
+M=D
 
-            @SP
-            M=M+1
-        
-                @5 // get which location
-                D=A
-                @THAT // variable
-                D=D+M // where to pop it
+// pop argument 1
 
-                @pop_temp_var // store chosen pop location in tmp variable
-                M=D
-                
-                @SP // variable 
-                M=M-1
-                A=M
-                D=M
+@1 // get which location
+D=A
+@ARG // variable
+D=D+M // where to pop it
 
-                @pop_temp_var // pop it
-                A=M
-                M=D
+@pop_temp_var // store chosen pop location in tmp variable
+M=D
 
-            
-                @2 // get which location
-                D=A
-                @THAT // variable
-                D=D+M // where to pop it
+@SP // variable 
+M=M-1
+A=M
+D=M
 
-                @pop_temp_var // store chosen pop location in tmp variable
-                M=D
-                
-                @SP // variable 
-                M=M-1
-                A=M
-                D=M
+@pop_temp_var // pop it
+A=M
+M=D
 
-                @pop_temp_var // pop it
-                A=M
-                M=D
+// push constant 36
 
-            
-            @510
-            D=A
-        
-            @SP 
-            A=M 
-            M=D
+@36
+D=A
 
-            @SP
-            M=M+1
-                        
-                @SP
-                M=M-1
-                A=M
-                D=M
+@SP 
+A=M 
+M=D
 
-                @11
-                M=D
-            
-                    @0 
-                    D=A 
-                    @LCL 
-                    D=D+M 
-                    A=D 
-                    D=M
-            
-            @SP 
-            A=M 
-            M=D
+@SP
+M=M+1
+// pop this 6
 
-            @SP
-            M=M+1
-        
-                    @5 
-                    D=A 
-                    @THAT 
-                    D=D+M 
-                    A=D 
-                    D=M
-            
-            @SP 
-            A=M 
-            M=D
+@6 // get which location
+D=A
+@THIS // variable
+D=D+M // where to pop it
 
-            @SP
-            M=M+1
-        
-                @SP
-                M=M-1
-                A=M
-                D=M
+@pop_temp_var // store chosen pop location in tmp variable
+M=D
 
-                @SP
-                A=M-1
-                M=M+D
-            
-                    @1 
-                    D=A 
-                    @ARG 
-                    D=D+M 
-                    A=D 
-                    D=M
-            
-            @SP 
-            A=M 
-            M=D
+@SP // variable 
+M=M-1
+A=M
+D=M
 
-            @SP
-            M=M+1
-        
-                @SP
-                M=M-1
-                A=M
-                D=M
+@pop_temp_var // pop it
+A=M
+M=D
 
-                @SP
-                A=M-1
-                M=M-D
-            
-                    @6 
-                    D=A 
-                    @THIS 
-                    D=D+M 
-                    A=D 
-                    D=M
-            
-            @SP 
-            A=M 
-            M=D
+// push constant 42
 
-            @SP
-            M=M+1
-        
-                    @6 
-                    D=A 
-                    @THIS 
-                    D=D+M 
-                    A=D 
-                    D=M
-            
-            @SP 
-            A=M 
-            M=D
+@42
+D=A
 
-            @SP
-            M=M+1
-        
-                @SP
-                M=M-1
-                A=M
-                D=M
+@SP 
+A=M 
+M=D
 
-                @SP
-                A=M-1
-                M=M+D
-            
-                @SP
-                M=M-1
-                A=M
-                D=M
+@SP
+M=M+1
+// push constant 45
 
-                @SP
-                A=M-1
-                M=M-D
-            
-                @11
-                D=M
-            
-            @SP 
-            A=M 
-            M=D
+@45
+D=A
 
-            @SP
-            M=M+1
-        
-                @SP
-                M=M-1
-                A=M
-                D=M
+@SP 
+A=M 
+M=D
 
-                @SP
-                A=M-1
-                M=M+D
-            
+@SP
+M=M+1
+// pop that 5
+
+@5 // get which location
+D=A
+@THAT // variable
+D=D+M // where to pop it
+
+@pop_temp_var // store chosen pop location in tmp variable
+M=D
+
+@SP // variable 
+M=M-1
+A=M
+D=M
+
+@pop_temp_var // pop it
+A=M
+M=D
+
+// pop that 2
+
+@2 // get which location
+D=A
+@THAT // variable
+D=D+M // where to pop it
+
+@pop_temp_var // store chosen pop location in tmp variable
+M=D
+
+@SP // variable 
+M=M-1
+A=M
+D=M
+
+@pop_temp_var // pop it
+A=M
+M=D
+
+// push constant 510
+
+@510
+D=A
+
+@SP 
+A=M 
+M=D
+
+@SP
+M=M+1
+// pop temp 6
+
+@SP
+M=M-1
+A=M
+D=M
+
+@11
+M=D
+// push local 0
+
+@0 
+D=A 
+@LCL 
+D=D+M 
+A=D 
+D=M
+
+@SP 
+A=M 
+M=D
+
+@SP
+M=M+1
+// push that 5
+
+@5 
+D=A 
+@THAT 
+D=D+M 
+A=D 
+D=M
+
+@SP 
+A=M 
+M=D
+
+@SP
+M=M+1
+// add
+
+@SP
+AM=M-1
+D=M
+
+A=A-1
+M=M+D
+// push argument 1
+
+@1 
+D=A 
+@ARG 
+D=D+M 
+A=D 
+D=M
+
+@SP 
+A=M 
+M=D
+
+@SP
+M=M+1
+// sub
+
+@SP
+AM=M-1
+D=M
+
+A=A-1
+M=M-D
+// push this 6
+
+@6 
+D=A 
+@THIS 
+D=D+M 
+A=D 
+D=M
+
+@SP 
+A=M 
+M=D
+
+@SP
+M=M+1
+// push this 6
+
+@6 
+D=A 
+@THIS 
+D=D+M 
+A=D 
+D=M
+
+@SP 
+A=M 
+M=D
+
+@SP
+M=M+1
+// add
+
+@SP
+AM=M-1
+D=M
+
+A=A-1
+M=M+D
+// sub
+
+@SP
+AM=M-1
+D=M
+
+A=A-1
+M=M-D
+// push temp 6
+
+@11
+D=M
+
+@SP 
+A=M 
+M=D
+
+@SP
+M=M+1
+// add
+
+@SP
+AM=M-1
+D=M
+
+A=A-1
+M=M+D

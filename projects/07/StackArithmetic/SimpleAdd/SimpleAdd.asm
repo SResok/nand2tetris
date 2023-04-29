@@ -1,30 +1,30 @@
+// push constant 7
 
-            @7
-            D=A
-        
-            @SP 
-            A=M 
-            M=D
+@7
+D=A
 
-            @SP
-            M=M+1
-        
-            @8
-            D=A
-        
-            @SP 
-            A=M 
-            M=D
+@SP 
+A=M 
+M=D
 
-            @SP
-            M=M+1
-        
-                @SP
-                M=M-1
-                A=M
-                D=M
+@SP
+M=M+1
+// push constant 8
 
-                @SP
-                A=M-1
-                M=M+D
-            
+@8
+D=A
+
+@SP 
+A=M 
+M=D
+
+@SP
+M=M+1
+// add
+
+@SP
+AM=M-1
+D=M
+
+A=A-1
+M=M+D

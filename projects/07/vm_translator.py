@@ -1,6 +1,7 @@
 import re
 import sys
 import os
+from textwrap import dedent
 
 class VMTranslator:
     def __init__(self, input_file):
@@ -96,12 +97,12 @@ class VMTranslator:
 
         if line["action"] == "push":
             push = """
-                    @{0} 
-                    D=A 
-                    @{1} 
-                    D=D+M 
-                    A=D 
-                    D=M
+            @{0} 
+            D=A 
+            @{1} 
+            D=D+M 
+            A=D 
+            D=M
             """.format(line["value"], variable)
 
             return push + self.handle_push()
@@ -143,8 +144,8 @@ class VMTranslator:
 
         if line["action"] == "push":
             push = """
-                @{0}
-                D=M
+            @{0}
+            D=M
             """.format(temp_address) 
 
             return push + self.handle_push()
@@ -243,9 +244,9 @@ class VMTranslator:
                 0;JMP
 
                 (OP{0})
-                    @SP
-                    A=M-1
-                    M=-1
+                @SP
+                A=M-1
+                M=-1
 
                 (END{0})
             """.format(self.get_label())
@@ -270,9 +271,9 @@ class VMTranslator:
                 0;JMP
 
                 (OP{0})
-                    @SP
-                    A=M-1
-                    M=-1
+                @SP
+                A=M-1
+                M=-1
                     
                 (END{0})
             """.format(self.get_label())
@@ -297,9 +298,9 @@ class VMTranslator:
                 0;JMP
 
                 (OP{0})
-                    @SP
-                    A=M-1
-                    M=-1
+                @SP
+                A=M-1
+                M=-1
 
                 (END{0})
             """.format(self.get_label())
@@ -359,13 +360,13 @@ class VMTranslator:
                 line = line.strip() and line.split()
 
                 if len(line) == 1:  # math operation
-                    self.translation += self.handle_operation(line[0])
+                    self.translation += dedent(self.handle_operation(line[0]))
                 else:
                     segment = line[1]
                     if segment not in self.reserved_variables and segment not in ["constant","temp","pointer","static"]:
                         sys.exit("Unknown segment: {0}".format(segment))
 
-                    self.translation += self.handle_segment(line)
+                    self.translation += dedent(self.handle_segment(line))
 
         with open(self.out_file, 'w') as o:
             o.write(self.translation)
