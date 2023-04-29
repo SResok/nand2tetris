@@ -354,6 +354,8 @@ class VMTranslator:
                 if len(line) <= 1:
                     continue
 
+                self.translation += "// " + line
+
                 line = line.strip() and line.split()
 
                 if len(line) == 1:  # math operation
