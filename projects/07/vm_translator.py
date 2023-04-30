@@ -3,7 +3,54 @@ import sys
 import os
 from textwrap import dedent
 
-class Parser(object):
+
+class Main:
+    def __init__(self, input_file):
+        input_file = input_file
+        file_name = os.path.splitext(os.path.basename(input_file))[0]
+        dir_path = os.path.dirname(input_file)
+        out_file = os.path.join(dir_path, file_name + ".asm")
+        
+        self.parser = Parser(input_file)
+        self.code_writer = CodeWriter(file_name, out_file)
+
+
+    def translate(self):
+
+        self.parser.get_next_command()
+        self.parser.advance()
+        
+        while self.parser.current_command:
+            self.code_writer.write("// {0}".format(" ".join(self.parser.current_command)))
+            if self.parser.get_command_type() == self.parser.types["arithmetic"]:
+                self.code_writer.write_arithmetic(self.parser.arg1())
+            elif self.parser.get_command_type() in ["C_PUSH","C_POP"]:
+                self.code_writer.write_push_pop(self.parser.get_command_type(), self.parser.arg1(), self.parser.arg2())
+
+            self.parser.advance()
+
+        # # remove blank lines 
+        # translation = "\n".join([s for s in translation.split("\n") if s]) 
+
+class Parser:
+    def __init__(self, input_file):
+        self.types = {
+            "arithmetic": "C_ARITHMETIC",
+            "push":"C_PUSH",
+            "pop": "C_POP",
+            "label":"C_LABEL",
+            "goto": "C_GOTO",
+            "if":"C_IF",
+            "function":"C_FUNCTION",
+            "return":"C_RETURN",
+            "call": "C_CALL"
+        }
+        
+        self.input_file = open(input_file, 'r')
+
+        self.current_command = None
+        self.next_command = None
+
     def remove_comments(self, string):
         pattern = r"(\".*?\"|\'.*?\')|(/\*.*?\*/|//[^\r\n]*$)"
         regex = re.compile(pattern, re.MULTILINE | re.DOTALL)
@@ -15,31 +62,66 @@ class Parser(object):
                 return match.group(1)
 
         return regex.sub(_replacer, string)
+    
+    def get_command_type(self):
+        if len(self.current_command) == 1:
+            return self.types["arithmetic"]
 
-    def get_commands(self, input_file):
-        parsed_commands = []
+        if self.current_command[0] not in self.types:
+            sys.exit("Unknown types: {0}".format(current_command[1]))
 
-        with open(input_file, 'r') as f:
-            for command in f:
-                command = self.remove_comments(command)
-                if len(command) <= 1:
-                    continue
+        else:
+            return self.types[self.current_command[0]]
+    
+    
+    def advance(self):
+        self.current_command = self.next_command
+        self.get_next_command()
 
-                command = command.strip() and command.split()
+    def get_next_command(self):
+        if self.next_command == False: ### last command to parse
+            self.current_command = self.next_command
+            return
 
-                parsed_commands.append(command)
+        line = self.input_file.readline()
 
-        return parsed_commands
+        if not line:
+            self.close()
+            self.next_command = False
+            return
+        
+        line = self.remove_comments(line)
+        if len(line) <= 1:
+            self.get_next_command()
+            return
+        
+        self.next_command = line.strip() and line.split()
 
-class CodeWriter():
-    def __init__(self, commands, file_name):
+    def has_more_commands(self):
+        return True if self.next_command else False
+
+
+    def arg1(self):
+        if self.get_command_type() == self.types["arithmetic"]:
+            return self.current_command[0]
+        
+        if self.current_command == self.types["return"]:
+            sys.exit("Should not be called from: {0}".format(self.types["return"]))
+
+        else: return self.current_command[1]
+
+
+    def arg2(self):
+        for allowed in ["push","pop","function","call"]:
+            if self.get_command_type() == self.types[allowed]:
+                return int(self.current_command[2])
+
+    def close(self):
+        self.input_file.close()
+
+class CodeWriter:
+    def __init__(self, file_name, out_file):
         self.file_name = file_name
-        self.commands = commands
-
-        self.command = []
-
-        self.code = ""
-
         self.reserved_variables = {
             "local": "LCL",
             "argument": "ARG",
@@ -47,39 +129,18 @@ class CodeWriter():
             "that": "THAT"
         }
 
-        self.label_no = 0
+        self.label_no = 0        
 
-    def write(self):
-        for i in range(len(self.commands)):
-            self.handle_command(self.commands[i])
+        self.out_file = open(out_file, 'w')
 
-        return self.code
+    def write_arithmetic(self,command):
+        if command not in ["add", "sub", "eq","lt","gt","neg","and","not","or"]:
+            sys.exit("Unknown operation: {0}".format(command))
 
-    
-    def handle_command(self,command):
-        self.code += "// " + " ".join(command)
+        code = ""
 
-        if len(command) == 1:  # math operation
-            self.code += dedent(self.handle_operation(command[0]))
-        else:
-            segment = command[1]
-            if segment not in self.reserved_variables and segment not in ["constant","temp","pointer","static"]:
-                sys.exit("Unknown segment: {0}".format(segment))
-
-            self.command = {
-                "action": command[0],
-                "segment": command[1],
-                "value": int(command[2])
-            }
-
-            self.code += dedent(self.handle_segment(command[1]))
-
-    def handle_operation(self, op):
-        if op not in ["add", "sub", "eq","lt","gt","neg","and","not","or"]:
-            sys.exit("Unknown operation: {0}".format(op))
-        
-        if op == "add":
-            return """
+        if command == "add":
+            code = """
                 @SP
                 AM=M-1
                 D=M
@@ -88,8 +149,8 @@ class CodeWriter():
                 M=M+D
             """
 
-        elif op == "sub":
-            return """
+        elif command == "sub":
+            code = """
                 @SP
                 AM=M-1
                 D=M
@@ -98,8 +159,8 @@ class CodeWriter():
                 M=M-D
             """
 
-        elif op == "eq":
-            return """
+        elif command == "eq":
+            code = """
                 @SP
                 AM=M-1
                 D=M
@@ -125,8 +186,8 @@ class CodeWriter():
                 (END{0})
             """.format(self.get_label())
         
-        elif op == "lt":
-            return """
+        elif command == "lt":
+            code = """
                 @SP
                 AM=M-1
                 D=M
@@ -152,8 +213,8 @@ class CodeWriter():
                 (END{0})
             """.format(self.get_label())
             
-        elif op == "gt":
-            return """
+        elif command == "gt":
+            code = """
                 @SP
                 AM=M-1
                 D=M
@@ -179,16 +240,15 @@ class CodeWriter():
                 (END{0})
             """.format(self.get_label())
 
-        elif op == "neg":
-            return """
+        elif command == "neg":
+            code = """
                 @SP
                 A=M-1
                 M=-M
-
             """
         
-        elif op == "or":
-            return """
+        elif command == "or":
+            code = """
                 @SP
                 AM=M-1
                 D=M
@@ -201,15 +261,15 @@ class CodeWriter():
                 M=D
             """
 
-        elif op == "not":
-            return """
+        elif command == "not":
+            code = """
                 @SP
                 A=M-1
                 M=!M
             """
 
-        elif op == "and":
-            return """
+        elif command == "and":
+            code = """
                 @SP
                 AM=M-1
                 D=M
@@ -221,39 +281,72 @@ class CodeWriter():
                 A=M-1
                 M=D
             """
-    def handle_segment(self, segment):
-        if segment in self.reserved_variables:
-            return self.handle_reserved_variables()
-        
-        elif segment == "constant":
-            return self.handle_constant()
- 
-        elif segment == "static":
-            return self.handle_static()
 
-        elif segment == "temp":
-            return self.handle_temp()
+        self.write(code)
 
-        elif segment == "pointer":
-            return self.handle_pointer()
+    def write_push_pop(self, action, segment, value):
+        if segment not in self.reserved_variables and segment not in ["constant","temp","pointer","static"]:
+            sys.exit("Unknown segment: {0}".format(segment))
+        print(value)
+        if action == "C_PUSH":
+            if segment in self.reserved_variables:
+                variable = self.reserved_variables[segment]
+                self.write("""
+                @{0} 
+                D=A 
+                @{1} 
+                D=D+M 
+                A=D 
+                D=M
+                """.format(value, variable) + self.handle_push())
+            if segment == "constant":
+                self.write("""
+                @{0}
+                D=A
+                """.format(value) + self.handle_push())
+            elif segment == "static":
+                static_var = self.file_name + "." + str(value)
+                self.write("""
+                @{0}
+                D=M
+                
+                @SP 
+                A=M 
+                M=D
 
-    def handle_reserved_variables(self):
-        variable = self.reserved_variables[self.command["segment"]]
+                @SP
+                M=M+1
+                """.format(static_var))
+            elif segment == "temp":
+                temp_address = 5 + value
 
-        if self.command["action"] == "push":
-            push = """
-            @{0} 
-            D=A 
-            @{1} 
-            D=D+M 
-            A=D 
-            D=M
-            """.format(self.command["value"], variable)
+                if temp_address not in range(5, 12):
+                    sys.exit("temp error")
 
-            return push + self.handle_push()
+                push = """
+                @{0}
+                D=M
+                """.format(temp_address) 
 
-        elif self.command["action"] == "pop":
-            pop = """
+                self.write(push + self.handle_push())                
+            elif segment == "pointer":
+                variable = "THIS" if value == 0 else "THAT"
+                self.write("""
+                    @{0}
+                    D=M
+                    
+                    @SP 
+                    A=M 
+                    M=D
+
+                    @SP
+                    M=M+1
+                """.format( variable ))
+
+        elif action == "C_POP":
+            if segment in self.reserved_variables:
+                variable = self.reserved_variables[segment]
+                pop = """
                 @{0}
                 D=A
                 @{1}
@@ -271,61 +364,38 @@ class CodeWriter():
                 A=M
                 M=D
 
-            """.format( self.command["value"], variable )
+                """.format( value, variable )
 
-            return pop
-    def handle_constant(self):
-        return """
-            @{0}
-            D=A
-        """.format(self.command["value"]) + self.handle_push()
-    def handle_static(self):
-        static_var = self.file_name + "." + str(line["value"])
+                self.write(pop)
+            elif segment == "static":
+                static_var = self.file_name + "." + str(value)
+                self.write("""
+                    @SP
+                    M=M-1
+                    A=M
+                    D=M
 
-        if self.command["action"] == "push":
+                    @{0}
+                    M=D
+                """.format(static_var))
+            elif segment == "temp":
+                temp_address = 5 + value
 
-            return """
-            @{0}
-            D=M
-            
-            @SP 
-            A=M 
-            M=D
+                if temp_address not in range(5, 12):
+                    sys.exit("temp error")
 
-            @SP
-            M=M+1
-            """.format(static_var)
+                self.write("""                
+                    @SP
+                    M=M-1
+                    A=M
+                    D=M
 
-        elif self.command["action"] == "pop":
-            
-            return """
-            @SP
-            M=M-1
-            A=M
-            D=M
-
-            @{0}
-            M=D
-        """.format(static_var)
-    def handle_temp(self):
-        # temp 8 place segment
-        # from 5 to 12
-
-        temp_address = 5 + self.command["value"]
-
-        if temp_address not in range(5, 12):
-            sys.exit("temp error")
-
-        if self.command["action"] == "push":
-            push = """
-            @{0}
-            D=M
-            """.format(temp_address) 
-
-            return push + self.handle_push()
-
-        elif self.command["action"] == "pop":
-            return """                
+                    @{0}
+                    M=D
+                """.format(temp_address))            
+            elif segment == "pointer":
+                variable = "THIS" if value == 0 else "THAT"
+                self.write("""
                 @SP
                 M=M-1
                 A=M
@@ -333,35 +403,13 @@ class CodeWriter():
 
                 @{0}
                 M=D
-            """.format(temp_address)
-    def handle_pointer(self):
-        variable = "THIS" if self.command["value"] == 0 else "THAT"
+                """.format( variable ) )
 
-        if self.command["action"] == "push":
 
-            return """
-                @{0}
-                D=M
-                
-                @SP 
-                A=M 
-                M=D
-
-                @SP
-                M=M+1
-            """.format( variable )
-
-        elif self.command["action"] == "pop":
-            
-            return """
-                @SP
-                M=M-1
-                A=M
-                D=M
-
-                @{0}
-                M=D
-            """.format( variable ) 
+    def write(self, code):
+        self.out_file.write(code)    
+    def close(self):
+        self.out_file.close()
 
     def get_label(self):
         self.label_no += 1
@@ -375,30 +423,7 @@ class CodeWriter():
             @SP
             M=M+1
         """
-
-class Main(object):
-    def __init__(self, input_file):
-        self.input_file = input_file
-        self.file_name = os.path.splitext(os.path.basename(self.input_file))[0]
-        
-        self.translate()
-
-    def translate(self):
-        
-        parser = Parser()
-        parsed_commands = parser.get_commands(self.input_file)
-        
-        code_writer = CodeWriter(parsed_commands,self.file_name)
-        translation = code_writer.write()
-
-        # remove blank lines 
-        translation = "\n".join([s for s in translation.split("\n") if s]) 
-
-        dir_path = os.path.dirname(self.input_file)
-        out_file = os.path.join(dir_path, self.file_name + ".asm")
-        
-        with open(out_file, 'w') as o:
-            o.write(translation)
+    
 
 
 
@@ -411,4 +436,5 @@ if not os.path.isfile(sys.argv[1]):
 
 input_file = sys.argv[1]
 
-Main(input_file)
+vm_translator = Main(input_file)
+vm_translator.translate()
